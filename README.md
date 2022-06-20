@@ -1,4 +1,4 @@
-GD-GDH
+gd-macro-converter
 macro converter sometimes macros will break but it's not my fault.
 
 this site, if you can call it that, is based on mat i it's just an addition to the site,I am not the creator.
