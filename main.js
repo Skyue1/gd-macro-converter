@@ -189,7 +189,55 @@ function parsexBot(text) {
     return {fps, actions};
 }
 
+function parseGDBot(text) {
+    const lines = text.split('\n');
+    const fps = parseInt(lines.splice(0,1)[0].split(' ')[1].trim());
+    if (lines[0].trim() !== 'bot_plus') {
+        alert('GDBot only works with pro+');
+        return;
+    }
+    lines.splice(0,1);
+    const actions = [];
+    // for converting the x pos
+    const buffer = new ArrayBuffer(4);
+    const view = new DataView(buffer);
+    for (const line of lines) {
+        if (!line.trim()) continue;
+        const [state, rawPos] = line.trim().split(' ').map(i => parseInt(i));
+        // state:
+        // 0 - release
+        // 1 - hold
+        // 2 - p2 release
+        // 3 - p2 hold
+        const player2 = state > 1;
+        const hold = state % 2 == 1;
+        view.setUint32(0, rawPos);
+        const x = view.getFloat32(0);
+        actions.push({ x, hold, player2 });
+    }
+    return {fps, actions};
+}
+
 function parsexBotFrame(text) {
+    const lines = text.split('\n');
+    const fps = parseInt(lines.splice(0,1)[0].split(' ')[1].trim());
+    if (lines[0].trim() !== 'frames') {
+        alert('not a frame');
+        return;
+    }
+    lines.splice(0,1);
+    const actions = [];
+    for (const line of lines) {
+        if (!line.trim()) continue;
+        const [state, rawPos] = line.trim().split(' ').map(i => parseInt(i));
+        const player2 = state > 1;
+        const hold = state % 2 == 1;
+        actions.push({ x: parseInt(rawPos), hold, player2 });
+    }
+    return {fps, actions};
+}
+
+function parseGDBotFrame(text) {
     const lines = text.split('\n');
     const fps = parseInt(lines.splice(0,1)[0].split(' ')[1].trim());
     if (lines[0].trim() !== 'frames') {
@@ -408,7 +456,30 @@ function dumpxBot(replay) {
     return final.slice(0, final.length - 1);
 }
 
+function dumpGDBot(replay) {
+    let final = `fps: ${Math.round(replay.fps)}\r\nbot_plus\r\n`;
+    const buffer = new ArrayBuffer(4);
+    const view = new DataView(buffer);
+    replay.actions.forEach(action => {
+        // amazing
+        const state = action.hold + 2 * action.player2;
+        view.setFloat32(0, action.x);
+        const pos = view.getUint32(0);
+        final += `${state} ${pos}\r\n`;
+    });
+    return final.slice(0, final.length - 1);
+}
+
 function dumpxBotFrame(replay) {
+    let final = `fps: ${Math.round(replay.fps)}\r\nframes\r\n`;
+    replay.actions.forEach(action => {
+        const state = action.hold + 2 * action.player2;
+        final += `${state} ${Math.floor(action.x)}\r\n`;
+    });
+    return final.slice(0, final.length - 1);
+}
+
+function dumpGDBotFrame(replay) {
     let final = `fps: ${Math.round(replay.fps)}\r\nframes\r\n`;
     replay.actions.forEach(action => {
         const state = action.hold + 2 * action.player2;
@@ -522,9 +593,11 @@ const extensions = {
     ddhor: 'ddhor',
     'ddhor-new': 'ddhor',
     xbot: 'xbot',
+    gdbot: 'gdbot',
     kdbot: 'kd',
     zbf: 'zbf',
     'xbot-frame': 'xbot',
+    'gdbot-frame': 'gdbot',
     'ybot-frame': null, // why
     'url': 'replay',
     'url-f': 'replay',
@@ -571,6 +644,9 @@ document.getElementById('btn-convert').addEventListener('click', async () => {
                 case 'xbot':
                     replay = parsexBot(await files[0].text());
                     break;
+                case 'gdbot':
+                    replay = parseGDBot(await files[0].text());
+                    break;    
                 case 'kdbot':
                     replay = parseKDBot(view);
                     break;
@@ -580,6 +656,9 @@ document.getElementById('btn-convert').addEventListener('click', async () => {
                 case 'xbot-frame':
                     replay = parsexBotFrame(await files[0].text());
                     break;
+                 case 'gdbot-frame':
+                    replay = parseGDBotFrame(await files[0].text());
+                    break;    
                 case 'tasbot':
                 case 'tasbot-f':
                     replay = parseTASBOT(await files[0].text(), from === 'tasbot-f');
@@ -636,6 +715,9 @@ document.getElementById('btn-convert').addEventListener('click', async () => {
             case 'xbot':
                 saveAs(new Blob([dumpxBot(replay)], {type: 'text/plain'}), 'macro.' + extensions[to]);
                 return;
+            case 'gdbot':
+                saveAs(new Blob([dumpGDBot(replay)], {type: 'text/plain'}), 'macro.' + extensions[to]);
+                return;    
             case 'kdbot':
                 buffer = dumpKDBot(replay); 
                 break;
@@ -645,6 +727,9 @@ document.getElementById('btn-convert').addEventListener('click', async () => {
             case 'xbot-frame':
                 saveAs(new Blob([dumpxBotFrame(replay)], {type: 'text/plain'}), 'macro.' + extensions[to]);
                 return;
+            case 'gdbot-frame':
+                saveAs(new Blob([dumpGDBotFrame(replay)], {type: 'text/plain'}), 'macro.' + extensions[to]);
+                return;    
             case 'tasbot':
             case 'tasbot-f':
                 saveAs(new Blob([dumpTASBOT(replay, to === 'tasbot-f')], {type: 'application/json'}), 'macro.json');

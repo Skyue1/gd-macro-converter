@@ -11,7 +11,8 @@ const MacroType = {
 	UNIVERSAL: 6,
 	RUSH: 7,
 	ECHO: 8,
-	TASBOT: 9
+	TASBOT: 9,
+	GDBOT: 10
 };
 
 Object.freeze(MacroType);
@@ -164,6 +165,32 @@ const Converter = {
 			}
 		},
 
+		[MacroType.GDBOT](macro, stream) {
+			const text = stream.toText();
+			const lines = text.split('\n').map(s => s.trim()).filter(s => s);
+			const popLeft = arr => arr.splice(0, 1)[0];
+			macro.fps = parseInt(popLeft(lines).split(' ')[1]);
+
+			const header = popLeft(lines);
+			macro.frame = false;
+			if (header === 'frames')
+				macro.frame = true;
+			else if (header !== 'bot_plus')
+				throw 'No support';
+
+			// for casting the int to float (andx is weird)
+			const view = new DataView(new ArrayBuffer(4));
+			for (const line of lines) {
+				const [state, rawPos] = line.split(' ').map(s => parseInt(s));
+				if (!macro.frame) view.setUint32(0, rawPos);
+				macro.actions.push({
+					n: macro.frame ? rawPos : view.getFloat32(0),
+					hold: !!(state & 1),
+					player2: !!(state >> 1)
+				})
+			}
+		},
+
 		[MacroType.DDHOR](macro, stream) {
 			macro.frame = false;
 			const magic = stream.readStr(4);
@@ -293,6 +320,17 @@ const Converter = {
 				macro.frame = true;
 				macro.xpos = false;
 			} else if (ver !== 'pro_plus') {
+				// bruh
+			}
+
+		} else if (stream.readStr(5) === 'fps: ') {
+			macro.type = MacroType.GDBOT;
+			macro.fps = parseInt(stream.readUntil('\n').trim());
+			const ver = stream.readUntil('\n').trim();
+			if (ver === 'frames') {
+				macro.frame = true;
+				macro.xpos = false;
+			} else if (ver !== 'bot_plus') {
 				// bruh
 			}
 		}
