@@ -514,7 +514,7 @@ function dumpMHRjson(replay)
 {
 	// Does not support any physics.
 	const data = {
-		"_": "Mega Hack v7.1-beta0 Replay", // idfk what to put here lel
+		"_": "MHR", // idfk what to put here lel
 		"events": replay.actions.map(action => {
 			let e = {
 				"a": 0, // Phys
@@ -566,7 +566,6 @@ const extensions = {
     kdbot: 'kd',
     zbf: 'zbf',
     'xbot-frame': 'xbot',
-    'gdtas': 'txt',
     'ybot-frame': null, // why
     'url': 'replay',
     'url-f': 'replay',
@@ -710,7 +709,7 @@ document.getElementById('btn-convert').addEventListener('click', async () => {
                 buffer = dumpRush(replay);
                 break;
 			case 'mhrjson':
-				saveAs(new Blob([dumpMHRjson(replay)], {type: 'application/json'}), 'converted.mhr');
+				saveAs(new Blob([dumpMHRjson(replay)], {type: 'application/json'}), 'converted.mhr.json');
 				return;
 			
         }
