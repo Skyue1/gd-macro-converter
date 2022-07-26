@@ -512,15 +512,15 @@ function dumpRush(replay) {
 
 function dumpMHRjson(replay)
 {
-	// Does not support any physics.
+	// idk for supportt
 	const data = {
-		"_": "MHR", // idfk what to put here lel
+		"_": "Mega Hack v7.1-beta0 Replay",
 		"events": replay.actions.map(action => {
 			let e = {
-				"a": 0, // Phys
+				"a": 0, 
 				"down": action.hold,
 				"frame": action.x,
-				"r": 0, //Phys
+				"r": 0, 
 				"x": 0,
 				"y": 0
 			}
@@ -570,7 +570,7 @@ const extensions = {
     'url': 'replay',
     'url-f': 'replay',
     'rush': 'rsh',
-	'mhrjson': 'json'
+	'mhrjson': ''
 }
 
 document.getElementById('select-from').addEventListener('change', e => {
